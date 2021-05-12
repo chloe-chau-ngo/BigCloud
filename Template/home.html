@@ -1,0 +1,45 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Home</title>
+   
+</head>
+
+<body>
+    <!-- <h1>Welcome</h1>
+
+    {{data}} -->
+
+<style>
+ 
+    td {
+           width: 150px;
+           text-align: center;
+           border: 1px solid black;
+           padding: 5px;
+         }
+</style>
+<table>
+    <thead>
+      <tr>
+          <th>post_date</th>
+          <th>industry</th>
+          <th>overall_count</th>
+          <th>industry_count</th>
+      </tr>
+      </thead>    
+      <tbody>
+       {% for row in data %}    
+              <tr>
+                  <td>{{row[0]}}</td>
+                  <td>{{row[1]}}</td>
+                  <td>{{row[2]}}</td>
+                  <td>{{row[3]}}</td>
+              </tr>
+          {% endfor %}
+      </tbody>
+  </table>
+
+</body>
+</html>
