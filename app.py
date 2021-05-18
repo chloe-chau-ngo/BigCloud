@@ -5,39 +5,21 @@ import numpy as np
 from flask import Flask, request, jsonify, render_template, flash, redirect, session, url_for
 from flaskext.mysql import MySQL
 from urllib.parse import urlsplit
-#from flask_mysqldb import MySQL
 from login import LoginForm
-#from homepage import HomePageForm
-# from addcorkboard import AddCorkBoardForm
-# from populartags import PopularTagsForm
-# from searchpushpins import SearchForm
-# from viewpushpin import ViewPushPin
-# from addpushpin import AddPushPinForm
-# from viewcorkboard import ViewCorkBoard
-# from functools import wraps
-# from popularsites import PopularSitesForm
-# from corkboardstat import CorkBoardStat
-# from checkpassword import CheckPasswordForm
+from functools import wraps
 
 
-# logger = logging.getLogger("logger")
-# logger.setLevel(logging.INFO)
-# file_handler = logging.FileHandler(filename='./logs/log')
-# logger.addHandler(file_handler)
+
 
 secret_key = "secret123"
 
-
+# create the app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secret_key
 mysql = MySQL(app)
 
-# Main DB
-# app.config['MYSQL_DATABASE_USER'] = 'sql3411464'
-# app.config['MYSQL_DATABASE_PASSWORD'] = 'ZVfm84xHeJ'
-# app.config['MYSQL_DATABASE_DB'] = 'sql3411464'
-# app.config['MYSQL_DATABASE_HOST'] = 'sql3.freemysqlhosting.net'
 
+# connect to database
 app.config['MYSQL_DATABASE_USER'] = 'sql3411464'
 app.config['MYSQL_DATABASE_PASSWORD'] = 'ZVfm84xHeJ'
 app.config['MYSQL_DATABASE_DB'] = 'sql3411464'
@@ -47,13 +29,23 @@ mysql.init_app(app)
 
 # default route
 @app.route('/')
-def Home():
-    cur = mysql.get_db().cursor()
-    cur.execute("SELECT O.post_date,I.industry, O.count_id_indexed AS overall_count, I.count_id_indexed AS industry_count FROM Overall_count AS O INNER JOIN Industry_count AS I ON O.post_date = I.post_date GROUP BY I.industry")
-    fetchdata = cur.fetchall()
-    cur.close()
-    
-    return render_template('home.html', data=fetchdata)
+def initlialize_app():
+    return redirect('/login')
+
+
+
+# Check if user logged in
+def is_logged_in(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if session['logged_in']:
+            return f(*args, **kwargs)
+        else:
+            flash('Unauthorized, please login first', 'danger')
+            return redirect('/login')
+
+    return wrap
+
 
 
 # Login Page
@@ -73,13 +65,13 @@ def login():
             if result > 0:
                 # Get stored pin
                 data = cur.fetchone()
-                password = data[1]
+                password = data[2]
                 # Compare Passwords
                 if password_candidate == password:
                     # Passed
                     session['logged_in'] = True
                     session['email'] = email
-                    return redirect('/index')
+                    return redirect('/home')
                 else:
                     error = 'Invalid login.'
                     return render_template('Login.html', error=error, form=login)
@@ -89,6 +81,37 @@ def login():
                 error = 'User not found.'
                 return render_template('Login.html', error=error, form=login)
     return render_template('Login.html', title='Sign In', form=login)
+
+
+# home page
+@app.route('/home', methods=['GET'])
+@is_logged_in
+def Home():
+    cur = mysql.get_db().cursor()
+    
+    cur.execute("SELECT O.post_date,I.industry, O.count_id_indexed AS overall_count, I.count_id_indexed AS industry_count FROM Overall_count AS O INNER JOIN Industry_count AS I ON O.post_date = I.post_date GROUP BY I.industry")
+    
+    fetchdata = cur.fetchall()
+    cur.close()
+    
+    return render_template('home.html', data=fetchdata)
+
+
+# python page
+@app.route('/python01', methods=['GET'])
+@is_logged_in
+def python01 ():
+
+    return render_template('jupyter-analysis.html')
+
+
+# tableau page
+@app.route('/tableau01', methods=['GET'])
+@is_logged_in
+def tableau01 ():
+
+    return render_template('tableau01.html')
+
 
 if __name__ == '__main__':
     app.secret_key = secret_key
